@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../../components/ui/Button';
@@ -30,6 +30,9 @@ export function EligibilityForm({
 }: EligibilityFormProps) {
   const schema = useMemo(() => buildEligibilitySchema(rules), [rules]);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
+  
+  // State for screen reader announcements
+  const [announcement, setAnnouncement] = useState('');
 
   const {
     register,
@@ -37,25 +40,35 @@ export function EligibilityForm({
     formState: { errors },
     reset,
     setValue,
+    watch, // Added watch to track income/expenses in real-time
   } = useForm<EligibilityRequest>({
     resolver: zodResolver(schema),
     mode: 'onBlur',
   });
 
+  // Watch financial fields for the "Expenses > Income" warning
+  const income = watch('financialInfo.monthlyIncome');
+  const expenses = watch('financialInfo.monthlyExpenses');
+
   useEffect(() => {
     const product = products.find(p => p.id === selectedProductId);
-    
-    // Update the form values when product changes
+    if (!product) return;
+
     reset({
       productId: selectedProductId,
       personalInfo: { age: 35, employmentStatus: 'employed', employmentDuration: 24 },
       financialInfo: { monthlyIncome: 25000, monthlyExpenses: 15000, existingDebt: 5000 },
       loanDetails: {
-        requestedAmount: product ? Math.floor((product.minAmount + product.maxAmount) / 2) : 150000,
-        loanTerm: product ? Math.floor((product.minTerm + product.maxTerm) / 2) : 24,
-        loanPurpose: product?.purposes[0] || 'other',
+        requestedAmount: Math.floor((product.minAmount + product.maxAmount) / 2),
+        loanTerm: Math.floor((product.minTerm + product.maxTerm) / 2),
+        loanPurpose: product.purposes[0] || 'other',
       },
     });
+
+    // Announce the form update to assistive technology
+    setAnnouncement(
+      `Form updated for ${product.name}. Loan amounts must be between R${product.minAmount.toLocaleString()} and R${product.maxAmount.toLocaleString()}.`
+    );
   }, [selectedProductId, products, reset]);
 
   const flattenedErrors = useMemo(() => {
@@ -86,7 +99,11 @@ export function EligibilityForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6" noValidate>
-      {/* HIDDEN INPUT TO REGISTER PRODUCT ID FOR ZOD */}
+      {/* Screen Reader Live Region */}
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
+
       <input type="hidden" {...register('productId')} value={selectedProductId} />
 
       <div ref={errorSummaryRef} tabIndex={-1} className="outline-none">
@@ -99,7 +116,7 @@ export function EligibilityForm({
             value={selectedProductId}
             onChange={(e) => {
               onProductChange(e.target.value);
-              setValue('productId', e.target.value); // Sync with RHF
+              setValue('productId', e.target.value);
             }}
           >
             {products.map((p) => (
@@ -114,7 +131,7 @@ export function EligibilityForm({
 
       <Fieldset legend="Personal information">
         <FormField label="Age" htmlFor="age" required error={errors.personalInfo?.age?.message}>
-          <TextInput id="age" type="number" hasError={!!errors.personalInfo?.age} {...register('personalInfo.age', { valueAsNumber: true })} />
+          <TextInput id="age" type="number" min={rules.personalInfo.age.min} max={rules.personalInfo.age.max} hasError={!!errors.personalInfo?.age} {...register('personalInfo.age', { valueAsNumber: true })} />
         </FormField>
         <FormField label="Employment status" htmlFor="employmentStatus" required error={errors.personalInfo?.employmentStatus?.message}>
           <SelectInput id="employmentStatus" hasError={!!errors.personalInfo?.employmentStatus} {...register('personalInfo.employmentStatus')}>
@@ -125,20 +142,27 @@ export function EligibilityForm({
           </SelectInput>
         </FormField>
         <FormField label="Employment duration (months)" htmlFor="employmentDuration" required error={errors.personalInfo?.employmentDuration?.message}>
-          <TextInput id="employmentDuration" type="number" hasError={!!errors.personalInfo?.employmentDuration} {...register('personalInfo.employmentDuration', { valueAsNumber: true })} />
+          <TextInput id="employmentDuration" type="number" min={rules.personalInfo.employmentDuration.min} hasError={!!errors.personalInfo?.employmentDuration} {...register('personalInfo.employmentDuration', { valueAsNumber: true })} />
         </FormField>
       </Fieldset>
 
       <Fieldset legend="Financial information">
         <FormField label="Monthly income (R)" htmlFor="monthlyIncome" required error={errors.financialInfo?.monthlyIncome?.message}>
-          <TextInput id="monthlyIncome" type="number" step="0.01" hasError={!!errors.financialInfo?.monthlyIncome} {...register('financialInfo.monthlyIncome', { valueAsNumber: true })} />
+          <TextInput id="monthlyIncome" type="number" min={rules.financialInfo.monthlyIncome.min ?? 0} step="0.01" hasError={!!errors.financialInfo?.monthlyIncome} {...register('financialInfo.monthlyIncome', { valueAsNumber: true })} />
         </FormField>
         <FormField label="Monthly expenses (R)" htmlFor="monthlyExpenses" required error={errors.financialInfo?.monthlyExpenses?.message}>
-          <TextInput id="monthlyExpenses" type="number" step="0.01" hasError={!!errors.financialInfo?.monthlyExpenses} {...register('financialInfo.monthlyExpenses', { valueAsNumber: true })} />
+          <TextInput id="monthlyExpenses" type="number" min={rules.financialInfo.monthlyExpenses.min ?? 0} step="0.01" hasError={!!errors.financialInfo?.monthlyExpenses} {...register('financialInfo.monthlyExpenses', { valueAsNumber: true })} />
         </FormField>
         <FormField label="Existing debt (R)" htmlFor="existingDebt" error={errors.financialInfo?.existingDebt?.message}>
-          <TextInput id="existingDebt" type="number" step="0.01" hasError={!!errors.financialInfo?.existingDebt} {...register('financialInfo.existingDebt', { valueAsNumber: true })} />
+          <TextInput id="existingDebt" type="number" min={0} step="0.01" hasError={!!errors.financialInfo?.existingDebt} {...register('financialInfo.existingDebt', { valueAsNumber: true })} />
         </FormField>
+
+        {/* Real-time warning if Expenses exceed Income */}
+        {income > 0 && expenses > income && (
+          <div className="sm:col-span-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <strong>Warning:</strong> Your monthly expenses exceed your monthly income. This will result in an automatic decline.
+          </div>
+        )}
 
         <div className="sm:col-span-2 rounded-xl border border-capitec-green-light bg-capitec-green-light/50 p-4">
           <p className="text-sm font-semibold text-capitec-navy">Credit check notice</p>
@@ -150,10 +174,10 @@ export function EligibilityForm({
 
       <Fieldset legend="Loan details">
         <FormField label="Requested amount (R)" htmlFor="requestedAmount" required error={errors.loanDetails?.requestedAmount?.message} hint={`Min: R${rules.loanDetails.requestedAmount.min} | Max: R${rules.loanDetails.requestedAmount.max}`}>
-          <TextInput id="requestedAmount" type="number" step="0.01" hasError={!!errors.loanDetails?.requestedAmount} {...register('loanDetails.requestedAmount', { valueAsNumber: true })} />
+          <TextInput id="requestedAmount" type="number" min={rules.loanDetails.requestedAmount.min ?? 0} max={rules.loanDetails.requestedAmount.max} step="0.01" hasError={!!errors.loanDetails?.requestedAmount} {...register('loanDetails.requestedAmount', { valueAsNumber: true })} />
         </FormField>
         <FormField label="Loan term (months)" htmlFor="loanTerm" required error={errors.loanDetails?.loanTerm?.message} hint={`Min: ${rules.loanDetails.loanTerm.min} | Max: ${rules.loanDetails.loanTerm.max}`}>
-          <TextInput id="loanTerm" type="number" hasError={!!errors.loanDetails?.loanTerm} {...register('loanDetails.loanTerm', { valueAsNumber: true })} />
+          <TextInput id="loanTerm" type="number" min={rules.loanDetails.loanTerm.min ?? 0} max={rules.loanDetails.loanTerm.max} hasError={!!errors.loanDetails?.loanTerm} {...register('loanDetails.loanTerm', { valueAsNumber: true })} />
         </FormField>
         <FormField label="Loan purpose" htmlFor="loanPurpose" required error={errors.loanDetails?.loanPurpose?.message}>
           <SelectInput id="loanPurpose" hasError={!!errors.loanDetails?.loanPurpose} {...register('loanDetails.loanPurpose')}>
