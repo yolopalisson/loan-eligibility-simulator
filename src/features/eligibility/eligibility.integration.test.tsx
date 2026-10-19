@@ -21,19 +21,24 @@ describe('Eligibility flow', () => {
     const user = userEvent.setup();
     renderApp();
 
+    // 1. Wait for the initial API calls (products + dynamic rules) to resolve
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: /check eligibility/i }),
       ).toBeInTheDocument(),
     );
 
+    // 2. Submit the form with defaults
     await user.click(screen.getByRole('button', { name: /check eligibility/i }));
 
+    // 3. Wait for the eligibility API call to resolve and render results
     await waitFor(() =>
-      expect(screen.getByText(/recommended loan/i)).toBeInTheDocument(),
+      expect(screen.getByText(/indicative offer/i)).toBeInTheDocument(),
     );
 
+    // 4. Assert the new UI text and components
     expect(screen.getByText(/affordability analysis/i)).toBeInTheDocument();
     expect(screen.getByText(/likely eligible/i)).toBeInTheDocument();
+    expect(screen.getByText(/important:/i)).toBeInTheDocument(); // The amber disclaimer
   });
 });

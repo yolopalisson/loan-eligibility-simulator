@@ -35,16 +35,24 @@ export function EligibilitySummary({ result }: Props) {
             </Badge>
             <Badge tone={riskTone}>{titleCase(riskCategory)} risk</Badge>
           </div>
-          <p className="mt-3 text-sm text-slate-600">{decisionReason}</p>
+          
+          {/* Updated to Capitec Navy Light */}
+          <p className="mt-3 text-sm text-capitec-navy-light">
+            {decisionReason}
+          </p>
         </div>
 
         <div className="w-full sm:w-56">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          {/* Updated to Capitec Navy Light */}
+          <p className="text-xs font-medium uppercase tracking-wide text-capitec-navy-light">
             Approval likelihood
           </p>
-          <p className="mt-1 text-2xl font-semibold text-slate-900">
+          
+          {/* Updated to Capitec Navy */}
+          <p className="mt-1 text-2xl font-semibold text-capitec-navy">
             {approvalLikelihood}%
           </p>
+          
           <div className="mt-2">
             <ProgressBar
               value={approvalLikelihood}

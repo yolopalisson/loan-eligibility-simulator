@@ -6,11 +6,7 @@ export function FormErrorSummary({ errors }: FormErrorSummaryProps) {
   if (errors.length === 0) return null;
 
   return (
-    <div
-      role="alert"
-      aria-live="assertive"
-      className="rounded-xl border border-red-200 bg-red-50 p-4"
-    >
+    <div role="alert" aria-live="assertive" className="rounded-xl border border-red-200 bg-red-50 p-4">
       <h2 className="text-sm font-semibold text-red-800">
         Please fix the following before continuing:
       </h2>

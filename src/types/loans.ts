@@ -1,18 +1,5 @@
-export type EmploymentStatus =
-  | 'employed'
-  | 'self_employed'
-  | 'unemployed'
-  | 'retired';
-
-export type LoanPurpose =
-  | 'debt_consolidation'
-  | 'home_improvement'
-  | 'education'
-  | 'medical'
-  | 'other'
-  | 'new_vehicle'
-  | 'used_vehicle';
-
+export type EmploymentStatus = 'employed' | 'self_employed' | 'retired';
+export type LoanPurpose = 'emergency' | 'groceries' | 'debt_consolidation' | 'home_improvement' | 'education' | 'medical' | 'other' | 'new_vehicle' | 'used_vehicle';
 export type RiskCategory = 'low' | 'medium' | 'high';
 export type AffordabilityScore = 'excellent' | 'good' | 'fair' | 'poor';
 
@@ -26,7 +13,6 @@ export interface FinancialInfo {
   monthlyIncome: number;
   monthlyExpenses: number;
   existingDebt: number;
-  creditScore?: number;
 }
 
 export interface LoanDetails {
@@ -35,11 +21,23 @@ export interface LoanDetails {
   loanPurpose: LoanPurpose;
 }
 
+// --- INPUT REQUESTS ---
+
 export interface EligibilityRequest {
+  productId: string;
   personalInfo: PersonalInfo;
   financialInfo: FinancialInfo;
   loanDetails: LoanDetails;
 }
+
+export interface RateRequest {
+  loanAmount: number;
+  loanTerm: number;
+  creditScore: number;
+  loanType: 'personal_loan' | 'vehicle_loan';
+}
+
+// --- API RESPONSES ---
 
 export interface EligibilityResponse {
   eligibilityResult: {
@@ -63,25 +61,6 @@ export interface EligibilityResponse {
   };
 }
 
-export interface LoanProduct {
-  id: string;
-  name: string;
-  description: string;
-  minAmount: number;
-  maxAmount: number;
-  minTerm: number;
-  maxTerm: number;
-  interestRateRange: { min: number; max: number };
-  purposes: LoanPurpose[];
-}
-
-export interface RateRequest {
-  loanAmount: number;
-  loanTerm: number;
-  creditScore: number;
-  loanType: 'personal_loan' | 'vehicle_loan';
-}
-
 export interface PaymentScheduleItem {
   month: number;
   payment: number;
@@ -96,6 +75,20 @@ export interface RateResponse {
   totalInterest: number;
   totalRepayment: number;
   paymentSchedule: PaymentScheduleItem[];
+}
+
+// --- PRODUCTS & VALIDATION ---
+
+export interface LoanProduct {
+  id: string;
+  name: string;
+  description: string;
+  minAmount: number;
+  maxAmount: number;
+  minTerm: number;
+  maxTerm: number;
+  interestRateRange: { min: number; max: number };
+  purposes: LoanPurpose[];
 }
 
 export interface ValidationRule {
@@ -115,7 +108,7 @@ export interface ValidationRules {
   financialInfo: {
     monthlyIncome: ValidationRule;
     monthlyExpenses: ValidationRule;
-    creditScore: ValidationRule;
+    existingDebt: ValidationRule;
   };
   loanDetails: {
     requestedAmount: ValidationRule;

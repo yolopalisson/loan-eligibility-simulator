@@ -3,7 +3,7 @@ import {
   calculateLoanRate,
   checkEligibility,
   getLoanProducts,
-  getValidationRules,
+  getProductValidationRules,
 } from '../../api/loans';
 import type {
   EligibilityRequest,
@@ -11,18 +11,19 @@ import type {
   RateRequest,
 } from '../../types/loans';
 
-export function useValidationRules() {
-  return useQuery({
-    queryKey: ['validation-rules'],
-    queryFn: getValidationRules,
-    staleTime: Infinity,
-  });
-}
-
 export function useLoanProducts() {
   return useQuery({
     queryKey: ['loan-products'],
     queryFn: getLoanProducts,
+    staleTime: Infinity,
+  });
+}
+
+export function useProductRules(productId?: string) {
+  return useQuery({
+    queryKey: ['validation-rules', productId],
+    queryFn: () => getProductValidationRules(productId!),
+    enabled: !!productId,
     staleTime: Infinity,
   });
 }

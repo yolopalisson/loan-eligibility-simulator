@@ -19,25 +19,13 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={htmlFor}
-        className="text-sm font-medium leading-tight text-slate-700"
-      >
+      <label htmlFor={htmlFor} className="text-sm font-medium leading-tight text-capitec-navy">
         {label}
         {required && <span className="ml-0.5 text-red-500">*</span>}
       </label>
       {children}
-      {hint && !error && (
-        <p className="text-xs leading-snug text-slate-500">{hint}</p>
-      )}
-      {error && (
-        <p
-          role="alert"
-          className="text-xs font-medium leading-snug text-red-600"
-        >
-          {error}
-        </p>
-      )}
+      {hint && !error && <p className="text-xs leading-snug text-capitec-navy-light">{hint}</p>}
+      {error && <p role="alert" className="text-xs font-medium leading-snug text-red-600">{error}</p>}
     </div>
   );
 }

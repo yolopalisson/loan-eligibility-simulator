@@ -25,8 +25,9 @@ export function getLoanProducts(): Promise<{ products: LoanProduct[] }> {
   return request('/api/loans/products');
 }
 
-export function getValidationRules(): Promise<ValidationRules> {
-  return request('/api/loans/validation-rules');
+// NEW: Fetch rules dynamically based on the product
+export function getProductValidationRules(productId: string): Promise<ValidationRules> {
+  return request(`/api/loans/validation-rules/${productId}`);
 }
 
 export function checkEligibility(

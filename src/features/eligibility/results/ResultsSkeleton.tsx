@@ -9,7 +9,7 @@ export function ResultsSkeleton() {
         <Skeleton className="mt-3 h-4 w-full" />
         <Skeleton className="mt-2 h-4 w-3/4" />
       </Card>
-      <Card title="Recommended loan">
+      <Card title="Indicative Offer">
         <div className="grid grid-cols-2 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-20" />

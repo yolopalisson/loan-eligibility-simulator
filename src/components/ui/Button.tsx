@@ -18,7 +18,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+    'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
 
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
@@ -28,11 +28,11 @@ export function Button({
 
   const variants = {
     primary:
-      'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-indigo-500',
+      'bg-capitec-green text-white hover:bg-capitec-green-dark hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-capitec-green',
     secondary:
-      'bg-white/70 text-slate-700 border border-slate-300 backdrop-blur hover:bg-white hover:-translate-y-0.5 focus-visible:ring-slate-400',
+      'bg-white/70 text-capitec-navy border border-capitec-gray hover:bg-white hover:-translate-y-0.5 focus-visible:ring-capitec-navy',
     ghost:
-      'bg-transparent text-slate-600 hover:bg-slate-100/70 focus-visible:ring-slate-400',
+      'bg-transparent text-capitec-navy-light hover:bg-capitec-gray focus-visible:ring-capitec-navy',
   };
 
   return (
@@ -42,26 +42,9 @@ export function Button({
       className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
     >
       {isLoading && (
-        <svg
-          className="h-4 w-4 animate-spin"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-            className="opacity-25"
-          />
-          <path
-            d="M4 12a8 8 0 0 1 8-8"
-            stroke="currentColor"
-            strokeWidth="4"
-            className="opacity-75"
-          />
+        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+          <path d="M4 12a8 8 0 0 1 8-8" stroke="currentColor" strokeWidth="4" className="opacity-75" />
         </svg>
       )}
       {!isLoading && leftIcon}

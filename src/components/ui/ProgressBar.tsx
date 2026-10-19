@@ -5,10 +5,10 @@ interface ProgressBarProps {
 }
 
 const toneClasses = {
-  success: 'bg-emerald-500',
+  success: 'bg-capitec-green',
   warning: 'bg-amber-500',
   danger: 'bg-red-500',
-  info: 'bg-indigo-500',
+  info: 'bg-capitec-navy-light',
 };
 
 export function ProgressBar({ value, tone = 'info', label }: ProgressBarProps) {
@@ -21,7 +21,7 @@ export function ProgressBar({ value, tone = 'info', label }: ProgressBarProps) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className="h-2 w-full overflow-hidden rounded-full bg-slate-200/70"
+      className="h-2 w-full overflow-hidden rounded-full bg-capitec-gray"
     >
       <div
         className={`h-full rounded-full transition-all duration-500 ${toneClasses[tone]}`}

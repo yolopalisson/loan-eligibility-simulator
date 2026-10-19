@@ -1,22 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-html {
-  -webkit-text-size-adjust: 100%;
+@theme {
+  /* Capitec Brand Colors */
+  --color-capitec-green: #00A651;
+  --color-capitec-green-dark: #00823F;
+  --color-capitec-green-light: #E6F6ED;
+  --color-capitec-navy: #002B49;
+  --color-capitec-navy-light: #4A6572;
+  --color-capitec-gray: #F4F6F8;
+
+  /* Font */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-image:
-    radial-gradient(circle at 12% 8%, rgba(99, 102, 241, 0.10), transparent 42%),
-    radial-gradient(circle at 88% 92%, rgba(236, 72, 153, 0.08), transparent 40%);
-  background-attachment: fixed;
-  min-height: 100vh;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--color-capitec-gray);
+    color: var(--color-capitec-navy);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
 }
 
-/* Squircle corners with border-radius fallback */
+/* Keep the squircle utility */
 .squircle {
   border-radius: 1.5rem;
 }
@@ -28,9 +41,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
