@@ -31,14 +31,16 @@ export function generatePaymentSchedule(
     const month = index + 1;
     const interest = balance * monthlyRate;
     const principalPaid = monthlyPayment - interest;
-    balance = Math.max(0, balance - principalPaid);
+    
+    // Fix: Apply round2 to the balance to prevent floating point drift
+    balance = round2(Math.max(0, balance - principalPaid));
 
     return {
       month,
       payment: round2(monthlyPayment),
       principal: round2(principalPaid),
       interest: round2(interest),
-      balance: round2(balance),
+      balance,
     };
   });
 }
@@ -95,57 +97,78 @@ export function calculateEligibility(
 ): EligibilityResponse {
   const { monthlyIncome, monthlyExpenses, existingDebt } = request.financialInfo;
   const { requestedAmount, loanTerm } = request.loanDetails;
+  const { productId } = request;
 
+  // 1. Base Calculations
   const disposableIncome = monthlyIncome - monthlyExpenses;
   const annualIncome = monthlyIncome * 12;
   const debtToIncomeRatio = monthlyIncome > 0 ? (existingDebt / monthlyIncome) * 100 : 0;
 
-  const maxAmount = Math.min(annualIncome * 0.6, 300_000);
-  const loanToIncomeRatio = annualIncome > 0 ? (maxAmount / annualIncome) * 100 : 0;
-
+  // 2. Calculate the new loan's rate and monthly payment
   const rateResult = calculateRate({
     loanAmount: requestedAmount,
     loanTerm,
     creditScore,
-    loanType: request.productId === 'secured' ? 'vehicle_loan' : 'personal_loan',
+    loanType: productId === 'secured' ? 'vehicle_loan' : 'personal_loan',
   });
 
-  const isEligible =
-    disposableIncome > 0 &&
-    debtToIncomeRatio <= 40 &&
-    requestedAmount <= maxAmount &&
-    creditScore >= 600;
+  // 3. Affordability & Ratios (Fixed per external review)
+  const disposableAfterNewLoan = disposableIncome - rateResult.monthlyPayment;
+  
+  // LTI is now based on the requested amount vs annual income (fixing the hardcoded 60% issue)
+  const loanToIncomeRatio = annualIncome > 0 ? (requestedAmount / annualIncome) * 100 : 0;
 
-  // Adjusted formula to better align with the spec's expected "low" risk
-  const approvalLikelihood = Math.min(
-    95,
-    Math.max(
-      10,
-      Math.round(
-        100 -
-          debtToIncomeRatio * 1.0 -
-          (requestedAmount / maxAmount) * 10 +
-          (creditScore - 600) / 5,
-      ),
-    ),
-  );
+  // 4. Product-Specific Tier Limits
+  let maxAmount = 300_000;
+  if (productId === 'short_term') {
+    maxAmount = 8_000;
+  } else if (productId === 'secured') {
+    maxAmount = 1_500_000;
+  } else {
+    // Unsecured: 60% of annual income, capped at R300k
+    maxAmount = Math.min(annualIncome * 0.6, 300_000);
+  }
 
-  const riskCategory =
-    approvalLikelihood >= 75 ? 'low' : approvalLikelihood >= 50 ? 'medium' : 'high';
+  // 5. Dynamic Eligibility Logic & Decision Reasons
+  let isEligible = true;
+  let decisionReason = 'Strong income-to-expense ratio and manageable existing debt.';
 
-  const affordabilityScore =
-    disposableIncome >= 15_000 ? 'excellent'
-      : disposableIncome >= 8_000 ? 'good'
-        : disposableIncome >= 3_000 ? 'fair' : 'poor';
+  if (disposableIncome <= 0) {
+    isEligible = false;
+    decisionReason = 'Your monthly expenses exceed your monthly income.';
+  } else if (debtToIncomeRatio > 40) {
+    isEligible = false;
+    decisionReason = 'Your existing debt obligations are too high compared to your income.';
+  } else if (requestedAmount > maxAmount) {
+    isEligible = false;
+    decisionReason = `The requested amount exceeds the maximum eligible amount of R${maxAmount.toLocaleString()} for this product.`;
+  } else if (disposableAfterNewLoan <= 0) {
+    isEligible = false;
+    decisionReason = 'You cannot afford the monthly repayment on this new loan based on your disposable income.';
+  } else if (creditScore < 600) {
+    isEligible = false;
+    decisionReason = 'Your credit score does not meet the minimum requirement for this product.';
+  }
+
+  // 6. Scoring based on the pass/fail state
+  const approvalLikelihood = isEligible 
+    ? Math.min(95, Math.max(75, 100 - Math.round(loanToIncomeRatio))) 
+    : 10;
+
+  const riskCategory = approvalLikelihood >= 75 ? 'low' : approvalLikelihood >= 50 ? 'medium' : 'high';
+  
+  // Affordability score is now based on what is left AFTER the new loan
+  const affordabilityScore = 
+    disposableAfterNewLoan >= 15_000 ? 'excellent'
+      : disposableAfterNewLoan >= 8_000 ? 'good'
+        : disposableAfterNewLoan >= 3_000 ? 'fair' : 'poor';
 
   return {
     eligibilityResult: {
       isEligible,
       approvalLikelihood,
       riskCategory,
-      decisionReason: isEligible
-        ? 'Strong income-to-expense ratio and manageable existing debt'
-        : 'Requested amount or debt obligations exceed affordability thresholds',
+      decisionReason,
     },
     recommendedLoan: {
       maxAmount: round2(maxAmount),
@@ -155,7 +178,7 @@ export function calculateEligibility(
       totalRepayment: rateResult.totalRepayment,
     },
     affordabilityAnalysis: {
-      disposableIncome: round2(disposableIncome),
+      disposableIncome: round2(disposableIncome), // The raw disposable income before the new loan
       debtToIncomeRatio: round2(debtToIncomeRatio),
       loanToIncomeRatio: round2(loanToIncomeRatio),
       affordabilityScore,
