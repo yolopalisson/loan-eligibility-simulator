@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "docker:build": "docker build -t loan-eligibility-simulator .",
+    "docker:run": "docker run -p 8080:80 loan-eligibility-simulator"
   },
   "dependencies": {
     "@hookform/resolvers": "3.9.0",
